@@ -6,7 +6,6 @@ const sha256 = require('js-sha256').sha256;
 const keccak256 = require('js-sha3').keccak256;
 const bitcoreLib = require('bitcore-lib');
 const ECDSA = bitcoreLib.crypto.ECDSA;
-const bitcoreMessage = require('bitcore-message');
 const bitcoin = require('bitcoinjs-lib');
 
 const OPTIONS_DOGE_REGTEST = {
