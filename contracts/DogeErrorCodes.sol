@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.5.10;
 
 // @dev - DogeSuperblocks error codes
 contract DogeErrorCodes {
