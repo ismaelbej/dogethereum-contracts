@@ -691,7 +691,7 @@ library DogeMessageLibrary {
         }
         require(yy == mulmod(y, y, p));
         // Now, with uncompressed x and y, create the address
-        return address(bytes20(keccak256(abi.encodePacked(x, y))));
+        return address(uint160(uint256(keccak256(abi.encodePacked(x, y)))));
     }
 
     // Gets the public key hash given a public key
