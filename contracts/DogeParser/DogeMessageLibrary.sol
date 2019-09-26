@@ -727,6 +727,7 @@ library DogeMessageLibrary {
     function parseAuxPoW(bytes memory rawBytes, uint pos, uint len) internal view
              returns (AuxPoW memory auxpow)
     {
+        len;
         // we need to traverse the bytes with a pointer because some fields are of variable length
         pos += 80; // skip non-AuxPoW header
         // auxpow.firstBytes = sliceBytes32Int(rawBytes, pos);
