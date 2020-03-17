@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 import {ClaimManager} from "./ClaimManager.sol";
 // Simple generic challenge-response computation verifier.
 //
@@ -177,7 +177,7 @@ contract Verifier {
         VerificationSession storage s = sessions[sessionId];
         require(s.lowStep + 1 == s.highStep);
         // ^ must be at the end of the binary search according to the smart contract
-        
+
         require(claimID == sessionsClaimId[sessionId]);
 
         //prove game ended

@@ -98,7 +98,7 @@
 // Addresses are the scriptHash with a version prefix of 5, encoded as
 // Base58check. These addresses begin with a '3'.
 
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 
 // parse a raw Dogecoin transaction byte array
 library DogeMessageLibrary {
@@ -724,10 +724,9 @@ library DogeMessageLibrary {
         }
     }
 
-    function parseAuxPoW(bytes memory rawBytes, uint pos, uint len) internal view
+    function parseAuxPoW(bytes memory rawBytes, uint pos, uint /* len */) internal view
              returns (AuxPoW memory auxpow)
     {
-        len;
         // we need to traverse the bytes with a pointer because some fields are of variable length
         pos += 80; // skip non-AuxPoW header
         // auxpow.firstBytes = sliceBytes32Int(rawBytes, pos);

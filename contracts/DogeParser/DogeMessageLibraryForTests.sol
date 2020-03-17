@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 
 import {DogeMessageLibrary} from './DogeMessageLibrary.sol';
 
@@ -65,7 +65,10 @@ contract DogeMessageLibraryForTests {
     // @dev - Converts a bytes of size 4 to uint32,
     // e.g. for input [0x01, 0x02, 0x03 0x04] returns 0x01020304
     function bytesToUint32(bytes memory input, uint pos) internal pure returns (uint32 result) {
-        result = uint32(uint8(input[pos]))*(2**24) + uint32(uint8(input[pos + 1]))*(2**16) + uint32(uint8(input[pos + 2]))*(2**8) + uint32(uint8(input[pos + 3]));
+        result = uint32(uint8(input[pos]))*(2**24)
+          + uint32(uint8(input[pos + 1]))*(2**16)
+          + uint32(uint8(input[pos + 2]))*(2**8)
+          + uint32(uint8(input[pos + 3]));
     }
 
     // @dev converts bytes of any length to bytes32.

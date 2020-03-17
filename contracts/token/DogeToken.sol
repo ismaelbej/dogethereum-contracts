@@ -1,11 +1,11 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 
 import "./HumanStandardToken.sol";
 import "./Set.sol";
 import "./../TransactionProcessor.sol";
 import "../DogeParser/DogeMessageLibrary.sol";
 import "./../ECRecovery.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), TransactionProcessor {
 
@@ -34,7 +34,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
     uint constant ERR_UNLOCK_MIN_UNLOCK_VALUE = 60080;
     uint constant ERR_UNLOCK_USER_BALANCE = 60090;
     uint constant ERR_UNLOCK_OPERATOR_NOT_CREATED = 60100;
-    uint constant ERR_UNLOCK_OPERATOR_BALANCE = 60110;    
+    uint constant ERR_UNLOCK_OPERATOR_BALANCE = 60110;
     uint constant ERR_UNLOCK_NO_AVAILABLE_UTXOS = 60120;
     uint constant ERR_UNLOCK_UTXOS_VALUE_LESS_THAN_VALUE_TO_SEND = 60130;
     uint constant ERR_UNLOCK_VALUE_TO_SEND_LESS_THAN_FEE = 60140;
@@ -50,7 +50,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
     address public trustedRelayerContract;
     // Doge-Eth price oracle to trust.
     address public trustedDogeEthPriceOracle;
-    // Number of times the eth collateral operator should cover her doge holdings 
+    // Number of times the eth collateral operator should cover her doge holdings
     uint8 public collateralRatio;
 
 
@@ -100,8 +100,8 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         uint24 operatorKeyIndex;
     }
 
-    struct OperatorKey { 
-        bytes20 key; 
+    struct OperatorKey {
+        bytes20 key;
         bool deleted;
     }
 
@@ -112,7 +112,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
     }
 
     // Adds an operator
-    // @param operatorPublicKeyCompressed operator compressed public key (33 bytes). 
+    // @param operatorPublicKeyCompressed operator compressed public key (33 bytes).
     //                          operatorPublicKeyCompressed[0] = odd (0x02 or 0x03)
     //                          operatorPublicKeyCompressed[1-32] = x
     // @param signature doubleSha256(msg.sender) signed by operator (65 bytes).
@@ -137,7 +137,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         //log1(bytes20(msg.sender), signedMessage);
         address recoveredAddress = ECRecovery.recover(signedMessage, signature);
         //log1(bytes32(recoveredAddress),
-        //     bytes32(DogeMessageLibrary.pub2address(uint(operatorPublicKeyX), operatorPublicKeyOdd)));                
+        //     bytes32(DogeMessageLibrary.pub2address(uint(operatorPublicKeyX), operatorPublicKeyOdd)));
         if (recoveredAddress != DogeMessageLibrary.pub2address(uint(operatorPublicKeyX), operatorPublicKeyOdd)) {
             emit ErrorDogeToken(ERR_OPERATOR_SIGNATURE);
             return;
@@ -155,7 +155,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         operator.ethAddress = msg.sender;
         operator.operatorKeyIndex = uint24(operatorKeys.length);
         operatorKeys.push(OperatorKey(operatorPublicKeyHash, false));
-        
+
     }
 
     function deleteOperator(bytes20 operatorPublicKeyHash) public {
@@ -169,7 +169,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
             return;
         }
 
-        OperatorKey storage operatorKey = operatorKeys[operator.operatorKeyIndex]; 
+        OperatorKey storage operatorKey = operatorKeys[operator.operatorKeyIndex];
         operatorKey.deleted = true;
         delete operators[operatorPublicKeyHash];
     }

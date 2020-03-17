@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 
 import {DepositsManager} from './DepositsManager.sol';
 import {ScryptVerifier} from "./ScryptVerifier.sol";
@@ -270,7 +270,7 @@ contract ClaimManager is DepositsManager, IScryptChecker {
     }
   }
 
-  function claimExists(ScryptClaim memory claim) pure private returns(bool) {
+  function claimExists(ScryptClaim storage claim) view private returns(bool) {
     return claim.claimant != address(0x0);
   }
 

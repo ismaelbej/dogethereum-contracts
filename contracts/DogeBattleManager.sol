@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 
 import {DogeClaimManager} from "./DogeClaimManager.sol";
 import {DogeErrorCodes} from "./DogeErrorCodes.sol";
@@ -100,13 +100,13 @@ contract DogeBattleManager is DogeErrorCodes, IScryptCheckerListener {
     event QueryMerkleRootHashes(bytes32 superblockHash, bytes32 sessionId, address submitter);
     event RespondMerkleRootHashes(bytes32 superblockHash, bytes32 sessionId, address challenger, bytes32[] blockHashes);
     event QueryBlockHeader(bytes32 superblockHash, bytes32 sessionId, address submitter, bytes32 blockSha256Hash);
-    
+
     event RespondBlockHeader(bytes32 superblockHash, bytes32 sessionId, address challenger, bytes32 blockScryptHash,
     bytes blockHeader, bytes powBlockHeader);
-    
+
     event RequestScryptHashValidation(bytes32 superblockHash, bytes32 sessionId, bytes32 blockScryptHash,
     bytes blockHeader, bytes32 proposalId, address submitter);
-    
+
     event ResolvedScryptHashValidation(bytes32 superblockHash, bytes32 sessionId, bytes32 blockScryptHash,
     bytes32 blockSha256Hash, bytes32 proposalId, address challenger, bool valid);
 

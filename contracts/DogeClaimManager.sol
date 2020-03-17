@@ -1,11 +1,11 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.16;
 
 import {DogeDepositsManager} from "./DogeDepositsManager.sol";
 import {DogeSuperblocks} from "./DogeSuperblocks.sol";
 import {DogeBattleManager} from "./DogeBattleManager.sol";
 import {DogeMessageLibrary} from "./DogeParser/DogeMessageLibrary.sol";
 import {DogeErrorCodes} from "./DogeErrorCodes.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 // @dev - Manager of superblock claims
 //
@@ -174,7 +174,7 @@ contract DogeClaimManager is DogeDepositsManager, DogeErrorCodes {
         uint32 _lastBits,
         bytes32 _parentHash
     ) public returns (uint, bytes32) {
-        require(address(trustedSuperblocks) != address(0x0));
+        require(address(trustedSuperblocks) != address(0));
 
         if (deposits[msg.sender] < minProposalDeposit) {
             emit ErrorClaim(0, ERR_SUPERBLOCK_MIN_DEPOSIT);
@@ -222,7 +222,7 @@ contract DogeClaimManager is DogeDepositsManager, DogeErrorCodes {
     // @param superblockHash – Id of the superblock to challenge.
     // @return - Error code and claim Id
     function challengeSuperblock(bytes32 superblockHash) public returns (uint, bytes32) {
-        require(address(trustedSuperblocks) != address(0x0));
+        require(address(trustedSuperblocks) != address(0));
 
         SuperblockClaim storage claim = claims[superblockHash];
 
