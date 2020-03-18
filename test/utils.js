@@ -15,6 +15,12 @@ const {
   toUint32,
   toUint256
 } = require('../utils/format');
+const {
+  blockchainTimeoutSeconds,
+  getBlockNumber,
+  mineBlocks
+} = require('../utils/blockchain')(web3);
+
 
 const OPTIONS_DOGE_REGTEST = {
   DURATION: 600,           // 10 minute
@@ -121,57 +127,6 @@ function getBlockDifficulty(blockHeader) {
   const difficulty1 = web3.utils.toBN(0x00FFFFF).mul(web3.utils.toBN(256).pow(web3.utils.toBN(0x1e-3)));
   const difficulty = difficulty1.div(target);
   return difficulty1.div(target);
-}
-
-function timeout(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function blockchainTimeoutSeconds(s) {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_increaseTime',
-      params: [s],
-      id: 0,
-    }, (err, result) => {
-      if (err) {
-        return reject(err);
-      }
-      return resolve(result);
-    });
-  });
-}
-
-async function mineBlocks(web3, n) {
-  for (let i = 0; i < n; i++) {
-    await new Promise((resolve, reject) => {
-      web3.currentProvider.send({
-        jsonrpc: '2.0',
-        method: 'evm_mine',
-        params: [],
-        id: 0,
-      }, (err, result) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(result);
-      });
-    });
-    await timeout(100);
-  }
-}
-
-function getBlockNumber() {
-  return new Promise((resolve, reject) => {
-    web3.eth.getBlockNumber((err, res) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(res);
-      }
-    });
-  });
 }
 
 // Helper to assert a promise failing
@@ -549,7 +504,6 @@ module.exports = {
   getBlockTimestamp,
   getBlockDifficultyBits,
   getBlockDifficulty,
-  timeout,
   blockchainTimeoutSeconds,
   mineBlocks,
   getBlockNumber,
