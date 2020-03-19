@@ -22,7 +22,7 @@ contract('testDogeTokenProcessTransaction', function(accounts) {
     await dogeToken.processTransaction(txData, txHash, operatorPublicKeyHash, superblockSubmitterAddress);
 
     const operatorFee = 9058532053;
-    const superblockSubmitterFee = 9058532053; 
+    const superblockSubmitterFee = 9058532053;
     const userValue = value - operatorFee - superblockSubmitterFee;
 
     const balance = await dogeToken.balanceOf(address);
@@ -34,7 +34,7 @@ contract('testDogeTokenProcessTransaction', function(accounts) {
 
     const utxo = await dogeToken.getUtxo(operatorPublicKeyHash, 0);
     assert.equal(utxo[0], value, `Utxo's value is not the expected one`);
-    assert.equal(utxo[1].toString(16), utils.remove0x(txHash), `Utxo's value is not the expected one`);
+    assert.equal(utxo[1], txHash, `Utxo's value is not the expected one`);
     assert.equal(utxo[2], 0, `Utxo's index is not the expected one`);
 
     var operator = await dogeToken.operators(operatorPublicKeyHash);

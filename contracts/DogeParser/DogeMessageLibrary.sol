@@ -121,17 +121,17 @@ library DogeMessageLibrary {
 
     // AuxPoW block fields
     struct AuxPoW {
-        uint scryptHash;
+        bytes32 scryptHash;
 
-        uint txHash;
+        bytes32 txHash;
 
-        uint coinbaseMerkleRoot; // Merkle root of auxiliary block hash tree; stored in coinbase tx field
-        uint[] chainMerkleProof; // proves that a given Dogecoin block hash belongs to a tree with the above root
+        bytes32 coinbaseMerkleRoot; // Merkle root of auxiliary block hash tree; stored in coinbase tx field
+        bytes32[] chainMerkleProof; // proves that a given Dogecoin block hash belongs to a tree with the above root
         uint dogeHashIndex; // index of Doge block hash within block hash tree
         uint coinbaseMerkleRootCode; // encodes whether or not the root was found properly
 
-        uint parentMerkleRoot; // Merkle root of transaction tree from parent Litecoin block header
-        uint[] parentMerkleProof; // proves that coinbase tx belongs to a tree with the above root
+        bytes32 parentMerkleRoot; // Merkle root of transaction tree from parent Litecoin block header
+        bytes32[] parentMerkleProof; // proves that coinbase tx belongs to a tree with the above root
         uint coinbaseTxIndex; // index of coinbase tx within Litecoin tx tree
 
         uint parentNonce;
@@ -145,9 +145,9 @@ library DogeMessageLibrary {
         uint32 time;
         uint32 bits;
         uint32 nonce;
-        uint blockHash;
-        uint prevBlock;
-        uint merkleRoot;
+        bytes32 blockHash;
+        bytes32 prevBlock;
+        bytes32 merkleRoot;
     }
 
     // Convert a variable integer into something useful and return it and
@@ -480,7 +480,7 @@ library DogeMessageLibrary {
     // takes a 'stop' argument which sets the maximum number of
     // siblings to scan through. stop=0 => scan all.
     function scanMerkleBranch(bytes memory txBytes, uint pos, uint stop) private pure
-             returns (uint[] memory, uint)
+             returns (bytes32[] memory, uint)
     {
         uint n_siblings;
         uint halt;
@@ -493,7 +493,7 @@ library DogeMessageLibrary {
             halt = stop;
         }
 
-        uint[] memory sibling_values = new uint[](halt);
+        bytes32[] memory sibling_values = new bytes32[](halt);
 
         for (uint256 i = 0; i < halt; i++) {
             sibling_values[i] = flip32Bytes(sliceBytes32Int(txBytes, pos));
@@ -514,12 +514,14 @@ library DogeMessageLibrary {
         return bytes20(slice);
     }
     // Slice 32 contiguous bytes from bytes `data`, starting at `start`
-    function sliceBytes32Int(bytes memory data, uint start) private pure returns (uint slice) {
+    function sliceBytes32Int(bytes memory data, uint start) private pure returns (bytes32) {
+        uint slice = 0;
         for (uint i = 0; i < 32; i++) {
             if (i + start < data.length) {
                 slice += uint(uint8(data[i + start])) << (8 * (31 - i));
             }
         }
+        return bytes32(slice);
     }
 
     // @dev returns a portion of a given byte array specified by its starting and ending points
@@ -704,23 +706,13 @@ library DogeMessageLibrary {
     //
     // @param _input - little-endian value
     // @return - input value in big-endian format
-    function flip32Bytes(uint _input) internal pure returns (uint result) {
+    function flip32Bytes(bytes32 _input) internal pure returns (bytes32 result) {
         assembly {
             let pos := mload(0x40)
             for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
                 mstore8(add(pos, i), byte(sub(31, i), _input))
             }
             result := mload(pos)
-        }
-    }
-    // helpers for flip32Bytes
-    struct UintWrapper {
-        uint value;
-    }
-
-    function ptr(UintWrapper memory uw) private pure returns (uint addr) {
-        assembly {
-            addr := uw
         }
     }
 
@@ -759,7 +751,7 @@ library DogeMessageLibrary {
     // 0 otherwise
     // also returns the position where the bytes first appear
     function findCoinbaseMerkleRoot(bytes memory rawBytes) private pure
-             returns (uint, uint, uint)
+             returns (bytes32, uint, uint)
     {
         uint position;
         bool found = false;
@@ -801,7 +793,7 @@ library DogeMessageLibrary {
             k = 0;
             for (i = 0; i < length; i += 2) {
                 j = i+1<length ? i+1 : length-1;
-                hashes[k] = bytes32(concatHash(uint(hashes[i]), uint(hashes[j])));
+                hashes[k] = concatHash(hashes[i], hashes[j]);
                 k += 1;
             }
             length = k;
@@ -816,16 +808,16 @@ library DogeMessageLibrary {
     // @param _siblings - transaction's Merkle siblings
     // @return - Merkle tree root of the block the transaction belongs to if the proof is valid,
     // garbage if it's invalid
-    function computeMerkle(uint _txHash, uint _txIndex, uint[] memory _siblings) internal pure returns (uint) {
-        uint resultHash = _txHash;
+    function computeMerkle(bytes32 _txHash, uint _txIndex, bytes32[] memory _siblings) internal pure returns (bytes32) {
+        bytes32 resultHash = _txHash;
         uint i = 0;
         while (i < _siblings.length) {
-            uint proofHex = _siblings[i];
+            bytes32 proofHex = _siblings[i];
 
             uint sideOfSiblings = _txIndex % 2;  // 0 means _siblings is on the right; 1 means left
 
-            uint left;
-            uint right;
+            bytes32 left;
+            bytes32 right;
             if (sideOfSiblings == 1) {
                 left = proofHex;
                 right = resultHash;
@@ -850,7 +842,7 @@ library DogeMessageLibrary {
     // @return - Merkle root of Litecoin block that the Dogecoin block
     // with this info was mined in if AuxPoW Merkle proof is correct,
     // garbage otherwise
-    function computeParentMerkle(AuxPoW memory _ap) internal pure returns (uint) {
+    function computeParentMerkle(AuxPoW memory _ap) internal pure returns (bytes32) {
         return flip32Bytes(computeMerkle(_ap.txHash,
                                          _ap.coinbaseTxIndex,
                                          _ap.parentMerkleProof));
@@ -864,7 +856,7 @@ library DogeMessageLibrary {
     // @param _ap - AuxPoW information corresponding to said block
     // @return - Merkle root of auxiliary chain tree
     // if AuxPoW Merkle proof is correct, garbage otherwise
-    function computeChainMerkle(uint _blockHash, AuxPoW memory _ap) internal pure returns (uint) {
+    function computeChainMerkle(bytes32 _blockHash, AuxPoW memory _ap) internal pure returns (bytes32) {
         return computeMerkle(_blockHash,
                              _ap.dogeHashIndex,
                              _ap.chainMerkleProof);
@@ -878,8 +870,8 @@ library DogeMessageLibrary {
     // @param _tx2 - Merkle node (either root or internal node), has to be `_tx1`'s sibling
     // @return - `_tx1` and `_tx2`'s parent, i.e. the result of concatenating them,
     // hashing that twice and flipping the bytes.
-    function concatHash(uint _tx1, uint _tx2) internal pure returns (uint) {
-        return flip32Bytes(uint(sha256(abi.encodePacked(sha256(abi.encodePacked(flip32Bytes(_tx1), flip32Bytes(_tx2)))))));
+    function concatHash(bytes32 _tx1, bytes32 _tx2) internal pure returns (bytes32) {
+        return flip32Bytes(sha256(abi.encodePacked(sha256(abi.encodePacked(flip32Bytes(_tx1), flip32Bytes(_tx2))))));
     }
 
     // @dev - checks if a merge-mined block's Merkle proofs are correct,
@@ -890,7 +882,7 @@ library DogeMessageLibrary {
     // @param _ap - AuxPoW struct corresponding to the block
     // @return 1 if block was merge-mined and coinbase index, chain Merkle root and Merkle proofs are correct,
     // respective error code otherwise
-    function checkAuxPoW(uint _blockHash, AuxPoW memory _ap) internal pure returns (uint) {
+    function checkAuxPoW(bytes32 _blockHash, AuxPoW memory _ap) internal pure returns (uint) {
         if (_ap.coinbaseTxIndex != 0) {
             return ERR_COINBASE_INDEX;
         }
@@ -925,15 +917,15 @@ library DogeMessageLibrary {
     // @dev - Bitcoin-way of hashing
     // @param _dataBytes - raw data to be hashed
     // @return - result of applying SHA-256 twice to raw data and then flipping the bytes
-    function dblShaFlip(bytes memory _dataBytes) internal pure returns (uint) {
-        return flip32Bytes(uint(sha256(abi.encodePacked(sha256(abi.encodePacked(_dataBytes))))));
+    function dblShaFlip(bytes memory _dataBytes) internal pure returns (bytes32) {
+        return flip32Bytes(sha256(abi.encodePacked(sha256(abi.encodePacked(_dataBytes)))));
     }
 
     // @dev - Bitcoin-way of hashing
     // @param _dataBytes - raw data to be hashed
     // @return - result of applying SHA-256 twice to raw data and then flipping the bytes
-    function dblShaFlipMem(bytes memory _rawBytes, uint offset, uint len) internal view returns (uint) {
-        return flip32Bytes(uint(sha256(abi.encodePacked(sha256mem(_rawBytes, offset, len)))));
+    function dblShaFlipMem(bytes memory _rawBytes, uint offset, uint len) internal view returns (bytes32) {
+        return flip32Bytes(sha256(abi.encodePacked(sha256mem(_rawBytes, offset, len))));
     }
 
     // @dev – Read a bytes32 from an offset in the byte array
@@ -1017,8 +1009,8 @@ library DogeMessageLibrary {
     // @param _blockHeader - Dogecoin block header bytes
     // @param pos - where to start reading hash from
     // @return - hash of block's parent in big endian format
-    function getHashPrevBlock(bytes memory _blockHeader, uint pos) internal pure returns (uint) {
-        uint hashPrevBlock;
+    function getHashPrevBlock(bytes memory _blockHeader, uint pos) internal pure returns (bytes32) {
+        bytes32 hashPrevBlock;
         assembly {
             hashPrevBlock := mload(add(add(_blockHeader, 0x24), pos))
         }
@@ -1030,8 +1022,8 @@ library DogeMessageLibrary {
     // @param _blockHeader - Dogecoin block header bytes
     // @param pos - where to start reading root from
     // @return - block's Merkle root in big endian format
-    function getHeaderMerkleRoot(bytes memory _blockHeader, uint pos) public pure returns (uint) {
-        uint merkle;
+    function getHeaderMerkleRoot(bytes memory _blockHeader, uint pos) public pure returns (bytes32) {
+        bytes32 merkle;
         assembly {
             merkle := mload(add(add(_blockHeader, 0x44), pos))
         }
@@ -1105,12 +1097,12 @@ library DogeMessageLibrary {
     // @param _len - length of the block header
     // @param _proposedBlockScryptHash - proposed block scrypt hash
     // @return - [ErrorCode, BlockSha256Hash, BlockScryptHash, IsMergeMined]
-    function verifyBlockHeader(bytes calldata _blockHeaderBytes, uint _pos, uint _len, uint _proposedBlockScryptHash) external view returns (uint, uint, uint, bool) {
+    function verifyBlockHeader(bytes calldata _blockHeaderBytes, uint _pos, uint _len, bytes32 _proposedBlockScryptHash) external view returns (uint, bytes32, bytes32, bool) {
         BlockHeader memory blockHeader = parseHeaderBytes(_blockHeaderBytes, _pos);
-        uint blockSha256Hash = blockHeader.blockHash;
+        bytes32 blockSha256Hash = blockHeader.blockHash;
         if (isMergeMined(blockHeader)) {
             AuxPoW memory ap = parseAuxPoW(_blockHeaderBytes, _pos, _len);
-            if (flip32Bytes(ap.scryptHash) > targetFromBits(blockHeader.bits)) {
+            if (uint256(flip32Bytes(ap.scryptHash)) > targetFromBits(blockHeader.bits)) {
                 return (ERR_PROOF_OF_WORK, blockHeader.blockHash, ap.scryptHash, true);
             }
             uint auxPoWCode = checkAuxPoW(blockSha256Hash, ap);
@@ -1119,7 +1111,7 @@ library DogeMessageLibrary {
             }
             return (0, blockHeader.blockHash, ap.scryptHash, true);
         } else {
-            if (flip32Bytes(_proposedBlockScryptHash) > targetFromBits(blockHeader.bits)) {
+            if (uint256(flip32Bytes(_proposedBlockScryptHash)) > targetFromBits(blockHeader.bits)) {
                 return (ERR_PROOF_OF_WORK, blockHeader.blockHash, _proposedBlockScryptHash, false);
             }
             return (0, blockHeader.blockHash, _proposedBlockScryptHash, false);

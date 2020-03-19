@@ -337,8 +337,8 @@ contract DogeBattleManager is DogeErrorCodes, IScryptCheckerListener {
         bytes32 proposedBlockScryptHash,
         bytes memory blockHeader
     ) internal returns (uint, bytes memory) {
-        (uint err, , uint blockScryptHash, bool isMergeMined) =
-            DogeMessageLibrary.verifyBlockHeader(blockHeader, 0, blockHeader.length, uint(proposedBlockScryptHash));
+        (uint err, , bytes32 blockScryptHash, bool isMergeMined) =
+            DogeMessageLibrary.verifyBlockHeader(blockHeader, 0, blockHeader.length, proposedBlockScryptHash);
         if (err != 0) {
             return (err, new bytes(0));
         }
@@ -348,8 +348,8 @@ contract DogeBattleManager is DogeErrorCodes, IScryptCheckerListener {
 
         blockInfo.timestamp = DogeMessageLibrary.getTimestamp(blockHeader, 0);
         blockInfo.bits = DogeMessageLibrary.getBits(blockHeader, 0);
-        blockInfo.prevBlock = bytes32(DogeMessageLibrary.getHashPrevBlock(blockHeader, 0));
-        blockInfo.scryptHash = bytes32(blockScryptHash);
+        blockInfo.prevBlock = DogeMessageLibrary.getHashPrevBlock(blockHeader, 0);
+        blockInfo.scryptHash = blockScryptHash;
         blockInfo.powBlockHeader = powBlockHeader;
         return (ERR_SUPERBLOCK_OK, powBlockHeader);
     }

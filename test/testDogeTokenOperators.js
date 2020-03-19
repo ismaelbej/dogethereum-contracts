@@ -121,7 +121,7 @@ contract('DogeToken - Operators', (accounts) => {
       await dogeToken.addOperatorDeposit(operatorPublicKeyHash, {value: 5000, from : operatorEthAddress});
       var operatorEthAddressBalanceBeforeWithdraw = web3.utils.toBN(await web3.eth.getBalance(operatorEthAddress));
       await dogeToken.setDogeEthPrice(3, {from : accounts[0]});
-      await dogeToken.addUtxo(operatorPublicKeyHash, 400, 1, 1);
+      await dogeToken.addUtxo(operatorPublicKeyHash, 400, web3.utils.toHex(1), 1);
       var withdrawOperatorDepositTxReceipt = await dogeToken.withdrawOperatorDeposit(operatorPublicKeyHash, 100, {from : operatorEthAddress});
       var operatorEthAddressBalanceAfterWithdraw = web3.utils.toBN(await web3.eth.getBalance(operatorEthAddress));
       var operator = await dogeToken.operators(operatorPublicKeyHash);
@@ -145,7 +145,7 @@ contract('DogeToken - Operators', (accounts) => {
       await sendAddOperator(dogeToken);
       await dogeToken.addOperatorDeposit(operatorPublicKeyHash, {value: 5000, from : operatorEthAddress});
       await dogeToken.setDogeEthPrice(3, {from : accounts[0]});
-      await dogeToken.addUtxo(operatorPublicKeyHash, 400, 1, 1);
+      await dogeToken.addUtxo(operatorPublicKeyHash, 400, web3.utils.toHex(1), 1);
       var withdrawOperatorDepositTxReceipt = await dogeToken.withdrawOperatorDeposit(operatorPublicKeyHash, 3000, {from : operatorEthAddress});
       assert.equal(60050, withdrawOperatorDepositTxReceipt.logs[0].args.err, "Expected ERR_OPERATOR_WITHDRAWAL_COLLATERAL_WOULD_BE_TOO_LOW error");
       var operator = await dogeToken.operators(operatorPublicKeyHash);

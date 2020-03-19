@@ -9,7 +9,7 @@ pragma solidity 0.5.16;
 import "./TransactionProcessor.sol";
 
 contract DummyTransactionProcessor is TransactionProcessor {
-    uint256 public lastTxHash;
+    bytes32 public lastTxHash;
     uint256 public ethBlock;
 
     address private _trustedRelayerContract;
@@ -23,12 +23,12 @@ contract DummyTransactionProcessor is TransactionProcessor {
     //
     // this exact function signature is required as it has to match
     // the signature specified in DogeSuperblocks (otherwise DogeSuperblocks will not call it)
-    function processTransaction(bytes memory /* dogeTx */, uint256 txHash, bytes20 /* operatorPublicKeyHash */, address /* superblockSubmitterAddress */) public returns (uint) {
+    function processTransaction(bytes memory /* dogeTx */, bytes32 txHash, bytes20 /* operatorPublicKeyHash */, address /* superblockSubmitterAddress */) public returns (uint) {
         log0("processTransaction called");
 
         // only allow trustedRelayerContract, otherwise anyone can provide a fake dogeTx
         if (msg.sender == _trustedRelayerContract) {
-            log1("processTransaction txHash, ", bytes32(txHash));
+            log1("processTransaction txHash, ", txHash);
             ethBlock = block.number;
             lastTxHash = txHash;
             // parse & do whatever with dogeTx

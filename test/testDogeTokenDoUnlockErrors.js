@@ -41,7 +41,7 @@ contract('testDogeTokenDoUnlockRequires', function(accounts) {
     assert.equal(60120, doUnlockTxReceipt.logs[0].args.err, "Expected ERR_UNLOCK_NO_AVAILABLE_UTXOS error");
 
     // unlock when available utxos does not cover value. This is an unrealistic scenario since ERR_UNLOCK_OPERATOR_BALANCE should have been returned before.
-    await dogeToken.addUtxo(operatorPublicKeyHash, 100000000, 1, 10);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 100000000, web3.utils.toHex(1), 10);
     await dogeToken.addDogeAvailableBalance(operatorPublicKeyHash, 2400000000);
     var doUnlockTxReceipt = await dogeToken.doUnlock(dogeAddress, 2500000000, operatorPublicKeyHash);
     await dogeToken.subtractDogeAvailableBalance(operatorPublicKeyHash, 2400000000);
@@ -49,7 +49,7 @@ contract('testDogeTokenDoUnlockRequires', function(accounts) {
 
     // unlock when value to send is greater than fee
     for (i = 0; i < 9; i++) {
-      await dogeToken.addUtxo(operatorPublicKeyHash, 100000000, 1, 10);
+      await dogeToken.addUtxo(operatorPublicKeyHash, 100000000, web3.utils.toHex(1), 10);
     }
     var doUnlockTxReceipt = await dogeToken.doUnlock(dogeAddress, 1000000000, operatorPublicKeyHash)
     assert.equal(60140, doUnlockTxReceipt.logs[0].args.err, "Expected ERR_UNLOCK_VALUE_TO_SEND_LESS_THAN_FEE error");

@@ -21,20 +21,20 @@ contract DogeMessageLibraryForTests {
         return DogeMessageLibrary.targetFromBits(bits) ;
     }
 
-    function concatHashPublic(uint tx1, uint tx2) public pure returns (uint) {
+    function concatHashPublic(bytes32 tx1, bytes32 tx2) public pure returns (bytes32) {
         return DogeMessageLibrary.concatHash(tx1, tx2);
     }
 
-    function flip32BytesPublic(uint input) public pure returns (uint) {
+    function flip32BytesPublic(bytes32 input) public pure returns (bytes32) {
         return DogeMessageLibrary.flip32Bytes(input);
     }
 
-    function checkAuxPoWPublic(uint blockHash, bytes memory auxBytes) public view returns (uint) {
+    function checkAuxPoWPublic(bytes32 blockHash, bytes memory auxBytes) public view returns (uint) {
         return checkAuxPoWForTests(blockHash, auxBytes);
     }
 
     // doesn't check merge mining to see if other error codes work
-    function checkAuxPoWForTests(uint _blockHash, bytes memory _auxBytes) internal view returns (uint) {
+    function checkAuxPoWForTests(bytes32 _blockHash, bytes memory _auxBytes) internal view returns (uint) {
         DogeMessageLibrary.AuxPoW memory ap = DogeMessageLibrary.parseAuxPoW(_auxBytes, 0, _auxBytes.length);
 
         //uint32 version = bytesToUint32Flipped(_auxBytes, 0);

@@ -312,25 +312,25 @@ contract DogeSuperblocks is DogeErrorCodes {
         bytes memory _txBytes,
         bytes20 _operatorPublicKeyHash,
         uint _txIndex,
-        uint[] memory _txSiblings,
+        bytes32[] memory _txSiblings,
         bytes memory _dogeBlockHeader,
         uint _dogeBlockIndex,
-        uint[] memory _dogeBlockSiblings,
+        bytes32[] memory _dogeBlockSiblings,
         bytes32 _superblockHash,
         TransactionProcessor _untrustedTargetContract
     ) public returns (uint) {
-        uint dogeBlockHash = DogeMessageLibrary.dblShaFlip(_dogeBlockHeader);
+        bytes32 dogeBlockHash = DogeMessageLibrary.dblShaFlip(_dogeBlockHeader);
 
         // Check if Doge block belongs to given superblock
-        if (bytes32(DogeMessageLibrary.computeMerkle(dogeBlockHash, _dogeBlockIndex, _dogeBlockSiblings))
+        if (DogeMessageLibrary.computeMerkle(dogeBlockHash, _dogeBlockIndex, _dogeBlockSiblings)
             != getSuperblockMerkleRoot(_superblockHash)) {
             // Doge block is not in superblock
-            emit VerifyTransaction(bytes32(DogeMessageLibrary.dblShaFlip(_txBytes)), ERR_SUPERBLOCK);
+            emit VerifyTransaction(DogeMessageLibrary.dblShaFlip(_txBytes), ERR_SUPERBLOCK);
             return ERR_SUPERBLOCK;
         }
 
-        uint txHash = verifyTx(_txBytes, _txIndex, _txSiblings, _dogeBlockHeader, _superblockHash);
-        if (txHash != 0) {
+        bytes32 txHash = verifyTx(_txBytes, _txIndex, _txSiblings, _dogeBlockHeader, _superblockHash);
+        if (txHash != bytes32(0)) {
             uint returnCode = _untrustedTargetContract.processTransaction(_txBytes, txHash, _operatorPublicKeyHash, superblocks[_superblockHash].submitter);
             emit RelayTransaction(bytes32(txHash), returnCode);
             return (returnCode);
@@ -354,14 +354,14 @@ contract DogeSuperblocks is DogeErrorCodes {
     function verifyTx(
         bytes memory _txBytes,
         uint _txIndex,
-        uint[] memory _siblings,
+        bytes32[] memory _siblings,
         bytes memory _txBlockHeaderBytes,
         bytes32 _txsuperblockHash
-    ) public returns (uint) {
-        uint txHash = DogeMessageLibrary.dblShaFlip(_txBytes);
+    ) public returns (bytes32) {
+        bytes32 txHash = DogeMessageLibrary.dblShaFlip(_txBytes);
 
         if (_txBytes.length == 64) {  // todo: is check 32 also needed?
-            emit VerifyTransaction(bytes32(txHash), ERR_TX_64BYTE);
+            emit VerifyTransaction(txHash, ERR_TX_64BYTE);
             return 0;
         }
 
@@ -369,7 +369,7 @@ contract DogeSuperblocks is DogeErrorCodes {
             return txHash;
         } else {
             // log is done via helperVerifyHash
-            return 0;
+            return bytes32(0);
         }
     }
 
@@ -388,9 +388,9 @@ contract DogeSuperblocks is DogeErrorCodes {
     // 20020 (ERR_CONFIRMATIONS) if the block is not in the main chain,
     // 20050 (ERR_MERKLE_ROOT) if the block is in the main chain but the Merkle proof fails.
     function helperVerifyHash(
-        uint256 _txHash,
+        bytes32 _txHash,
         uint _txIndex,
-        uint[] memory _siblings,
+        bytes32[] memory _siblings,
         bytes memory _blockHeaderBytes,
         bytes32 _txsuperblockHash
     ) private returns (uint) {
@@ -402,18 +402,18 @@ contract DogeSuperblocks is DogeErrorCodes {
 
         //TODO: Verify superblock is in superblock's main chain
         if (!isApproved(_txsuperblockHash) || !inMainChain(_txsuperblockHash)) {
-            emit VerifyTransaction(bytes32(_txHash), ERR_CHAIN);
+            emit VerifyTransaction(_txHash, ERR_CHAIN);
             return (ERR_CHAIN);
         }
 
         // Verify tx Merkle root
-        uint merkle = DogeMessageLibrary.getHeaderMerkleRoot(_blockHeaderBytes, 0);
+        bytes32 merkle = DogeMessageLibrary.getHeaderMerkleRoot(_blockHeaderBytes, 0);
         if (DogeMessageLibrary.computeMerkle(_txHash, _txIndex, _siblings) != merkle) {
-            emit VerifyTransaction(bytes32(_txHash), ERR_MERKLE_ROOT);
+            emit VerifyTransaction(_txHash, ERR_MERKLE_ROOT);
             return (ERR_MERKLE_ROOT);
         }
 
-        emit VerifyTransaction(bytes32(_txHash), 1);
+        emit VerifyTransaction(_txHash, 1);
         return (1);
     }
 

@@ -16,7 +16,7 @@ contract('testDogeTokenDoUnlockOperatorFee', function(accounts) {
     var balance = await dogeToken.balanceOf(accounts[0]);
     assert.equal(balance, 20000000000, `DogeToken's ${accounts[0]} balance is not the expected one`);
 
-    await dogeToken.addUtxo(operatorPublicKeyHash, 20000000000, 1, 10);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 20000000000, web3.utils.toHex(1), 10);
     const utxo = await dogeToken.getUtxo(operatorPublicKeyHash, 0);
     assert.equal(utxo[0].toNumber(), 20000000000, `Utxo value is not the expected one`);
 

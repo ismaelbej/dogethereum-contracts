@@ -15,14 +15,14 @@ contract('testDogeTokenDoUnlock2', function(accounts) {
     await dogeToken.assign(accounts[0], 5600000000);
     var balance = await dogeToken.balanceOf(accounts[0]);
 
-    await dogeToken.addUtxo(operatorPublicKeyHash, 400000000, 1, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 200000000, 2, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 600000000, 3, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 800000000, 4, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, 4, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, 4, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, 4, 1);
-    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, 4, 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 400000000, web3.utils.toHex(1), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 200000000, web3.utils.toHex(2), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 600000000, web3.utils.toHex(3), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 800000000, web3.utils.toHex(4), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, web3.utils.toHex(4), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, web3.utils.toHex(4), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, web3.utils.toHex(4), 1);
+    await dogeToken.addUtxo(operatorPublicKeyHash, 900000000, web3.utils.toHex(4), 1);
 
     const dogeAddress = utils.base58ToBytes20("DHx8ZyJJuiFM5xAHFypfz1k6bd2X85xNMy");
 

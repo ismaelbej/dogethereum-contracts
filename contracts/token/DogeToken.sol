@@ -86,7 +86,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
 
     struct Utxo {
         uint value;
-        uint txHash;
+        bytes32 txHash;
         uint16 index;
     }
 
@@ -206,7 +206,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         msg.sender.transfer(value);
     }
 
-    function processTransaction(bytes memory dogeTx, uint txHash, bytes20 operatorPublicKeyHash, address superblockSubmitterAddress)
+    function processTransaction(bytes memory dogeTx, bytes32 txHash, bytes20 operatorPublicKeyHash, address superblockSubmitterAddress)
         public returns (uint) {
         require(msg.sender == trustedRelayerContract);
 
@@ -224,7 +224,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         (value, firstInputPublicKeyHash, firstInputEthAddress, outputIndex) = DogeMessageLibrary.parseTransaction(dogeTx, operatorPublicKeyHash);
 
         // Add tx to the dogeTxHashesAlreadyProcessed
-        bool inserted = Set.insert(dogeTxHashesAlreadyProcessed, txHash);
+        bool inserted = Set.insert(dogeTxHashesAlreadyProcessed, uint256(txHash));
         // Check tx was not already processed
         if (!inserted) {
             emit ErrorDogeToken(ERR_PROCESS_TX_ALREADY_PROCESSED);
@@ -259,8 +259,8 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         }
     }
 
-    function wasDogeTxProcessed(uint txHash) public view returns (bool) {
-        return Set.contains(dogeTxHashesAlreadyProcessed, txHash);
+    function wasDogeTxProcessed(bytes32 txHash) public view returns (bool) {
+        return Set.contains(dogeTxHashesAlreadyProcessed, uint(txHash));
     }
 
     function processLockTransaction(address destinationAddress,
@@ -399,7 +399,7 @@ contract DogeToken is HumanStandardToken(0, "DogeToken", 8, "DOGETOKEN"), Transa
         return operator.utxos.length;
     }
 
-    function getUtxo(bytes20 operatorPublicKeyHash, uint i) public view returns (uint value, uint txHash, uint16 index) {
+    function getUtxo(bytes20 operatorPublicKeyHash, uint i) public view returns (uint value, bytes32 txHash, uint16 index) {
         Operator storage operator = operators[operatorPublicKeyHash];
         Utxo storage utxo = operator.utxos[i];
         return (utxo.value, utxo.txHash, utxo.index);
