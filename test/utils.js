@@ -20,6 +20,16 @@ const {
   getBlockNumber,
   mineBlocks
 } = require('../utils/blockchain')(web3);
+const {
+  calcBlockSha256Hash,
+  calcHeaderPoW,
+  getBlockDifficulty,
+  getBlockDifficultyBits,
+  getBlockTimestamp,
+  isHeaderAuxPoW,
+  makeMerkle,
+  makeMerkleProof,
+} = require('../utils/block');
 
 
 const OPTIONS_DOGE_REGTEST = {
@@ -67,18 +77,6 @@ async function parseDataFile(filename) {
   });
 };
 
-// Calculates the merkle root from an array of hashes
-// The hashes are expected to be 32 bytes in hexadecimal
-function makeMerkle(hashes) {
-  if (hashes.length == 0) {
-    throw new Error('Cannot compute merkle tree of an empty array');
-  }
-
-  return `0x${btcProof.getMerkleRoot(
-    hashes.map(x => formatHexUint32(remove0x(x)) )
-  )}`;
-}
-
 // Format an array of hashes to bytes array
 // Hashes are expected to be 32 bytes in hexadecimal
 function hashesToData(hashes) {
@@ -87,61 +85,6 @@ function hashesToData(hashes) {
     result += `${formatHexUint32(remove0x(hash))}`;
   });
   return `0x${result}`;
-}
-
-// Calculates the Dogecoin Scrypt hash from block header
-// Block header is expected to be in hexadecimal
-// Return the concatenated Scrypt hash and block header
-function headerToData(blockHeader) {
-  const scryptHash = formatHexUint32(calcHeaderPoW(blockHeader));
-  return `0x${scryptHash}${blockHeader}`;
-}
-
-// Calculates the double sha256 of a block header
-// Block header is expected to be in hexadecimal
-function calcBlockSha256Hash(blockHeader) {
-  const headerBin = fromHex(blockHeader).slice(0, 80);
-  return `0x${Buffer.from(sha256.array(sha256.arrayBuffer(headerBin))).reverse().toString('hex')}`;
-}
-
-// Get timestamp from dogecoin block header
-function getBlockTimestamp(blockHeader) {
-  const headerBin = fromHex(blockHeader).slice(0, 80);
-  const timestamp = headerBin[68] + 256 * headerBin[69] + 256 * 256 * headerBin[70] + 256 * 256 * 256 * headerBin[71];
-  return timestamp;
-}
-
-// Get difficulty bits from block header
-function getBlockDifficultyBits(blockHeader) {
-  const headerBin = fromHex(blockHeader).slice(0, 80);
-  const bits = headerBin[72] + 256 * headerBin[73] + 256 * 256 * headerBin[74] + 256 * 256 * 256 * headerBin[75];
-  return bits;
-}
-
-// Get difficulty from dogecoin block header
-function getBlockDifficulty(blockHeader) {
-  const headerBin = fromHex(blockHeader).slice(0, 80);
-  const exp = web3.utils.toBN(headerBin[75]);
-  const mant = web3.utils.toBN(headerBin[72] + 256 * headerBin[73] + 256 * 256 * headerBin[74]);
-  const target = mant.mul(web3.utils.toBN(256).pow(exp.sub(web3.utils.toBN(3))));
-  const difficulty1 = web3.utils.toBN(0x00FFFFF).mul(web3.utils.toBN(256).pow(web3.utils.toBN(0x1e-3)));
-  const difficulty = difficulty1.div(target);
-  return difficulty1.div(target);
-}
-
-// Helper to assert a promise failing
-async function verifyThrow(P, cond, message) {
-  let e;
-  try {
-    await P();
-  } catch (ex) {
-    e = ex;
-  }
-  assert.throws(() => {
-    if (e) {
-      throw e;
-    }
-  }, cond, message);
 }
 
 // Calculate a superblock id
@@ -192,14 +135,6 @@ function makeSuperblock(headers, parentId, parentAccumulatedWork, parentTimestam
     blockHeaders: headers,
     blockHashes: blockHashes.map(x => x.slice(2)), // <- remove prefix '0x'
   };
-}
-
-function forgeDogeBlockHeader(prevHash, time) {
-  const version = "03006200";
-  const merkleRoot = "0".repeat(56) + "deadbeef";
-  const bits = "ffff7f20";
-  const nonce = "feedbeef";
-  return version + prevHash + merkleRoot + time + bits + nonce;
 }
 
 function base58ToBytes20(str) {
@@ -312,14 +247,6 @@ function buildDogeTransaction({ signer, inputs, outputs }) {
   return txBuilder.build();
 }
 
-// the inputs to makeMerkleProof can be computed by using pybitcointools:
-// header = get_block_header_data(blocknum)
-// hashes = get_txs_in_block(blocknum)
-function makeMerkleProof(hashes, txIndex) {
-    var proofOfFirstTx = btcProof.getProof(hashes, txIndex);
-    return proofOfFirstTx.sibling;
-}
-
 // Adds the size of the hex string in bytes.
 // For input "111111" will return "00000003111111"
 function addSizeToHeader(input) {
@@ -330,14 +257,6 @@ function addSizeToHeader(input) {
   }
   return size + input;
 }
-
-// Calculate the scrypt hash from a buffer
-// hash = scryptHash(data, start, length)
-function scryptHash(data, start = 0, length = 80) {
-  let buff = Buffer.from(data, start, length);
-  return scryptsy(buff, buff, 1024, 1, 1, 32)
-}
-
 async function storeSuperblockFrom974401(superblocks, claimManager, sender) {
   const { headers, hashes } = await parseDataFile('test/headers/11from974401DogeMain.txt');
 
@@ -430,21 +349,6 @@ async function storeSuperblockFrom974401(superblocks, claimManager, sender) {
   return headerAndHashes;
 }
 
-// Calculate PoW hash from dogecoin header
-function calcHeaderPoW(header) {
-  const headerBin = fromHex(header);
-  if (isHeaderAuxPoW(headerBin)) {
-    const length = headerBin.length;
-    return scryptHash(headerBin.slice(length - 80, length)).toString('hex');
-  }
-  return scryptHash(headerBin).toString('hex');
-}
-
-// Return true when the block header contains a AuxPoW
-function isHeaderAuxPoW(headerBin) {
-  return (headerBin[1] & 0x01) != 0;
-}
-
 function bigNumberArrayToNumberArray(input) {
   var output = [];
   input.forEach(function(element) {
@@ -491,7 +395,6 @@ module.exports = {
   makeMerkleProof,
   addSizeToHeader,
   fromHex,
-  scryptHash,
   parseDataFile,
   calcHeaderPoW,
   isHeaderAuxPoW,
@@ -499,7 +402,6 @@ module.exports = {
   formatHexUint,
   makeMerkle,
   hashesToData,
-  headerToData,
   calcBlockSha256Hash,
   getBlockTimestamp,
   getBlockDifficultyBits,
@@ -507,11 +409,9 @@ module.exports = {
   blockchainTimeoutSeconds,
   mineBlocks,
   getBlockNumber,
-  verifyThrow,
   calcSuperblockHash,
   makeSuperblock,
   operatorSignItsEthAddress,
-  forgeDogeBlockHeader,
   base58ToBytes20,
   findEvent,
   initSuperblockChain,
