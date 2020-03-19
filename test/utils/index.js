@@ -14,12 +14,12 @@ const {
   remove0x,
   toUint32,
   toUint256
-} = require('../utils/format');
+} = require('../../utils/format');
 const {
   blockchainTimeoutSeconds,
   getBlockNumber,
   mineBlocks
-} = require('../utils/blockchain')(web3);
+} = require('../../utils/blockchain')(web3);
 const {
   calcBlockSha256Hash,
   calcHeaderPoW,
@@ -29,7 +29,7 @@ const {
   isHeaderAuxPoW,
   makeMerkle,
   makeMerkleProof,
-} = require('../utils/block');
+} = require('../../utils/block');
 
 
 const OPTIONS_DOGE_REGTEST = {
