@@ -496,14 +496,14 @@ library DogeMessageLibrary {
         bytes32[] memory sibling_values = new bytes32[](halt);
 
         for (uint256 i = 0; i < halt; i++) {
-            sibling_values[i] = flip32Bytes(sliceBytes32Int(txBytes, pos));
+            sibling_values[i] = flip32Bytes(sliceBytes32(txBytes, pos));
             pos += 32;
         }
 
         return (sibling_values, pos);
     }
     // Slice 20 contiguous bytes from bytes `data`, starting at `start`
-    function sliceBytes20(bytes memory data, uint start) private pure returns (bytes20) {
+    function sliceBytes20(bytes memory data, uint start) internal pure returns (bytes20) {
         uint160 slice = 0;
         // FIXME: With solc v0.4.24 and optimizations enabled
         // using uint160 for index i will generate an error
@@ -514,14 +514,8 @@ library DogeMessageLibrary {
         return bytes20(slice);
     }
     // Slice 32 contiguous bytes from bytes `data`, starting at `start`
-    function sliceBytes32Int(bytes memory data, uint start) private pure returns (bytes32) {
-        uint slice = 0;
-        for (uint i = 0; i < 32; i++) {
-            if (i + start < data.length) {
-                slice += uint(uint8(data[i + start])) << (8 * (31 - i));
-            }
-        }
-        return bytes32(slice);
+    function sliceBytes32(bytes memory data, uint start) internal pure returns (bytes32) {
+        return readBytes32(data, start);
     }
 
     // @dev returns a portion of a given byte array specified by its starting and ending points
@@ -721,13 +715,13 @@ library DogeMessageLibrary {
     {
         // we need to traverse the bytes with a pointer because some fields are of variable length
         pos += 80; // skip non-AuxPoW header
-        // auxpow.firstBytes = sliceBytes32Int(rawBytes, pos);
+        // auxpow.firstBytes = sliceBytes32(rawBytes, pos);
         uint slicePos;
         uint inputScriptPos;
         (slicePos, inputScriptPos) = getSlicePosAndScriptPos(rawBytes, pos);
         auxpow.txHash = dblShaFlipMem(rawBytes, pos, slicePos - pos);
         pos = slicePos;
-        auxpow.scryptHash = sliceBytes32Int(rawBytes, pos);
+        auxpow.scryptHash = sliceBytes32(rawBytes, pos);
         pos += 32;
         (auxpow.parentMerkleProof, pos) = scanMerkleBranch(rawBytes, pos, 0);
         auxpow.coinbaseTxIndex = getBytesLE(rawBytes, pos, 32);
@@ -735,7 +729,7 @@ library DogeMessageLibrary {
         (auxpow.chainMerkleProof, pos) = scanMerkleBranch(rawBytes, pos, 0);
         auxpow.dogeHashIndex = getBytesLE(rawBytes, pos, 32);
         pos += 40; // skip hash that was just read, parent version and prev block
-        auxpow.parentMerkleRoot = sliceBytes32Int(rawBytes, pos);
+        auxpow.parentMerkleRoot = sliceBytes32(rawBytes, pos);
         pos += 40; // skip root that was just read, parent block timestamp and bits
         auxpow.parentNonce = getBytesLE(rawBytes, pos, 32);
         uint coinbaseMerkleRootPosition;
@@ -770,7 +764,7 @@ library DogeMessageLibrary {
         if (!found) { // no merge mining header
             return (0, position - 4, ERR_NO_MERGE_HEADER);
         } else {
-            return (sliceBytes32Int(rawBytes, position), position - 4, 1);
+            return (sliceBytes32(rawBytes, position), position - 4, 1);
         }
     }
 
@@ -917,8 +911,8 @@ library DogeMessageLibrary {
     // @dev - Bitcoin-way of hashing
     // @param _dataBytes - raw data to be hashed
     // @return - result of applying SHA-256 twice to raw data and then flipping the bytes
-    function dblShaFlip(bytes memory _dataBytes) internal pure returns (bytes32) {
-        return flip32Bytes(sha256(abi.encodePacked(sha256(abi.encodePacked(_dataBytes)))));
+    function dblShaFlip(bytes memory _dataBytes) internal view returns (bytes32) {
+        return dblShaFlipMem(_dataBytes, 0, _dataBytes.length);
     }
 
     // @dev - Bitcoin-way of hashing
@@ -946,6 +940,19 @@ library DogeMessageLibrary {
                 add(mul(byte(2, word), 0x100),
                     add(mul(byte(1, word), 0x10000),
                         mul(byte(0, word), 0x1000000))))
+        }
+        return result;
+    }
+
+    // @dev – Read an uint32 from an offset in the byte array
+    function readUint32Flipped(bytes memory data, uint offset) internal pure returns (uint32) {
+        uint32 result;
+        assembly {
+            let word := mload(add(add(data, 0x20), offset))
+            result := add(byte(0, word),
+                add(mul(byte(1, word), 0x100),
+                    add(mul(byte(2, word), 0x10000),
+                        mul(byte(3, word), 0x1000000))))
         }
         return result;
     }
@@ -995,13 +1002,7 @@ library DogeMessageLibrary {
     // @param pos - where to start reading version from
     // @return - block's version in big endian format
     function getVersion(bytes memory _blockHeader, uint pos) internal pure returns (uint32 version) {
-        assembly {
-            let word := mload(add(add(_blockHeader, 0x4), pos))
-            version := add(byte(24, word),
-                add(mul(byte(25, word), 0x100),
-                    add(mul(byte(26, word), 0x10000),
-                        mul(byte(27, word), 0x1000000))))
-        }
+        return readUint32Flipped(_blockHeader, pos);
     }
 
     // @dev - extract previous block field from a raw Dogecoin block header
@@ -1010,11 +1011,7 @@ library DogeMessageLibrary {
     // @param pos - where to start reading hash from
     // @return - hash of block's parent in big endian format
     function getHashPrevBlock(bytes memory _blockHeader, uint pos) internal pure returns (bytes32) {
-        bytes32 hashPrevBlock;
-        assembly {
-            hashPrevBlock := mload(add(add(_blockHeader, 0x24), pos))
-        }
-        return flip32Bytes(hashPrevBlock);
+        return flip32Bytes(readBytes32(_blockHeader, pos + 4));
     }
 
     // @dev - extract Merkle root field from a raw Dogecoin block header
@@ -1023,11 +1020,7 @@ library DogeMessageLibrary {
     // @param pos - where to start reading root from
     // @return - block's Merkle root in big endian format
     function getHeaderMerkleRoot(bytes memory _blockHeader, uint pos) public pure returns (bytes32) {
-        bytes32 merkle;
-        assembly {
-            merkle := mload(add(add(_blockHeader, 0x44), pos))
-        }
-        return flip32Bytes(merkle);
+        return flip32Bytes(readBytes32(_blockHeader, pos + 36));
     }
 
     // @dev - extract bits field from a raw Dogecoin block header
@@ -1036,13 +1029,7 @@ library DogeMessageLibrary {
     // @param pos - where to start reading bits from
     // @return - block's difficulty in bits format, also big-endian
     function getBits(bytes memory _blockHeader, uint pos) internal pure returns (uint32 bits) {
-        assembly {
-            let word := mload(add(add(_blockHeader, 0x50), pos))
-            bits := add(byte(24, word),
-                add(mul(byte(25, word), 0x100),
-                    add(mul(byte(26, word), 0x10000),
-                        mul(byte(27, word), 0x1000000))))
-        }
+        return readUint32Flipped(_blockHeader, pos + 72);
     }
 
     // @dev - extract timestamp field from a raw Dogecoin block header
@@ -1051,13 +1038,7 @@ library DogeMessageLibrary {
     // @param pos - where to start reading bits from
     // @return - block's timestamp in big-endian format
     function getTimestamp(bytes memory _blockHeader, uint pos) internal pure returns (uint32 time) {
-        assembly {
-            let word := mload(add(add(_blockHeader, 0x4c), pos))
-            time := add(byte(24, word),
-                add(mul(byte(25, word), 0x100),
-                    add(mul(byte(26, word), 0x10000),
-                        mul(byte(27, word), 0x1000000))))
-        }
+        return readUint32Flipped(_blockHeader, pos + 68);
     }
 
     // @dev - converts raw bytes representation of a Dogecoin block header to struct representation
@@ -1078,7 +1059,7 @@ library DogeMessageLibrary {
     // @dev - Converts a bytes of size 4 to uint32,
     // e.g. for input [0x01, 0x02, 0x03 0x04] returns 0x01020304
     function bytesToUint32Flipped(bytes memory input, uint pos) internal pure returns (uint32 result) {
-        result = uint32(uint8(input[pos])) + uint32(uint8(input[pos + 1]))*(2**8) + uint32(uint8(input[pos + 2]))*(2**16) + uint32(uint8(input[pos + 3]))*(2**24);
+        return readUint32Flipped(input, pos);
     }
 
     // @dev - checks version to determine if a block has merge mining information
@@ -1102,7 +1083,7 @@ library DogeMessageLibrary {
         bytes32 blockSha256Hash = blockHeader.blockHash;
         if (isMergeMined(blockHeader)) {
             AuxPoW memory ap = parseAuxPoW(_blockHeaderBytes, _pos, _len);
-            if (uint256(flip32Bytes(ap.scryptHash)) > targetFromBits(blockHeader.bits)) {
+            if (uint256(flip32Bytes(_proposedBlockScryptHash)) > targetFromBits(blockHeader.bits)) {
                 return (ERR_PROOF_OF_WORK, blockHeader.blockHash, ap.scryptHash, true);
             }
             uint auxPoWCode = checkAuxPoW(blockSha256Hash, ap);

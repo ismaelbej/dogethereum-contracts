@@ -9,8 +9,36 @@ contract DogeMessageLibraryForTests {
         return bytesToUint32(input, 0);
     }
 
+    function bytesToUint32FlippedPublic(bytes memory input) public pure returns (uint32 result) {
+        return DogeMessageLibrary.bytesToUint32Flipped(input, 0);
+    }
+
+    function readBytes32Public(bytes memory data) public pure returns (bytes32) {
+        return DogeMessageLibrary.readBytes32(data, 0);
+    }
+
+    function readUint32Public(bytes memory data) public pure returns (uint32) {
+        return DogeMessageLibrary.readUint32(data, 0);
+    }
+
+    function readUint32FlippedPublic(bytes memory data) public pure returns (uint32) {
+        return DogeMessageLibrary.readUint32Flipped(data, 0);
+    }
+
     function bytesToBytes32Public(bytes memory b) public pure returns (bytes32) {
         return bytesToBytes32(b, 0);
+    }
+
+    function sliceBytes20Public(bytes memory data) public pure returns (bytes20) {
+        return  DogeMessageLibrary.sliceBytes20(data, 0);
+    }
+
+    function sliceBytes32Public(bytes memory data) public pure returns (bytes32) {
+        return  DogeMessageLibrary.sliceBytes32(data, 0);
+    }
+
+    function getVersionPublic(bytes memory _blockHeader) public pure returns (uint32) {
+        return DogeMessageLibrary.getVersion(_blockHeader, 0);
     }
 
     function sliceArrayPublic(bytes memory original, uint32 offset, uint32 endIndex) public view returns (bytes memory result) {
@@ -31,6 +59,52 @@ contract DogeMessageLibraryForTests {
 
     function checkAuxPoWPublic(bytes32 blockHash, bytes memory auxBytes) public view returns (uint) {
         return checkAuxPoWForTests(blockHash, auxBytes);
+    }
+
+    function parseHeaderBytesPublic(bytes memory _rawBytes) public view returns (
+        uint32 version,
+        uint32 time,
+        uint32 bits,
+        uint32 nonce,
+        bytes32 blockHash,
+        bytes32 prevBlock,
+        bytes32 merkleRoot
+    ) {
+        DogeMessageLibrary.BlockHeader memory ap = DogeMessageLibrary.parseHeaderBytes(_rawBytes, 0);
+        return (
+            ap.version,
+            ap.time,
+            ap.bits,
+            ap.nonce,
+            ap.blockHash,
+            ap.prevBlock,
+            ap.merkleRoot
+        );
+    }
+
+    function parseAuxPoWPublic(bytes memory rawBytes) public view returns (
+        bytes32 scryptHash,
+        bytes32 txHash,
+        bytes32 coinbaseMerkleRoot,
+        //bytes32[] chainMerkleProof,
+        uint dogeHashIndex,
+        uint coinbaseMerkleRootCode,
+        bytes32 parentMerkleRoot,
+        //bytes32[] parentMerkleProof,
+        uint coinbaseTxIndex,
+        uint parentNonce
+    ) {
+        DogeMessageLibrary.AuxPoW memory ap = DogeMessageLibrary.parseAuxPoW(rawBytes, 0, rawBytes.length);
+        return (
+            ap.scryptHash,
+            ap.txHash,
+            ap.coinbaseMerkleRoot,
+            ap.dogeHashIndex,
+            ap.coinbaseMerkleRootCode,
+            ap.parentMerkleRoot,
+            ap.coinbaseTxIndex,
+            ap.parentNonce
+        );
     }
 
     // doesn't check merge mining to see if other error codes work
