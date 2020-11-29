@@ -73,6 +73,5 @@ contract('DogeMessageLibrary', (accounts) => {
   it("parseAuxPoWPublic", async () => {
     const blockHeader = await dogeMessageLibraryForTests.parseHeaderBytesPublic(`0x${headers[0]}`);
     const auxPoW = await dogeMessageLibraryForTests.parseAuxPoWPublic(`0x${headers[0]}`);
-    console.log(JSON.stringify({ blockHeader, auxPoW }, null, '  '));
   });
 });
