@@ -15,10 +15,12 @@
     "scryptsy": "^2.0.0"
   },
   "devDependencies": {
+    "ganache-cli": "^6.12.1",
     "truffle": "^5.1.17"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "ganache": "npx ganache-cli -l 47000000000 -p 854",
+    "test": "npx truffle test"
   },
   "repository": {
     "type": "git",
